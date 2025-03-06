@@ -15,7 +15,8 @@ std = []
 derive = ["serde/derive"]
 
 [dependencies.serde]
-version = "1.0.204"
+#version = "1.0.204"
+git = "https://github.com/gamescriptai/serde"
 default-features = false
 features = ["alloc"]
 optional = true

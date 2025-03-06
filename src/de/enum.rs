@@ -12,6 +12,7 @@ use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use serde::de;
+use serde::de::VariantHint;
 use serde::Deserializer as _;
 
 #[cfg(feature = "std")]
@@ -51,6 +52,15 @@ impl<'de> de::EnumAccess<'de> for Deserializer<'de> {
 
 impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
     type Error = Error;
+
+    fn hint(&self) -> Option<VariantHint> {
+        Some(match &self.enum_box.data {
+            Data::Unit => VariantHint::Unit,
+            Data::NewType { .. } => VariantHint::Newtype,
+            Data::Tuple { values } => VariantHint::Tuple(values.len()),
+            Data::Struct { .. } => VariantHint::Struct(&[]),
+        })
+    }
 
     fn unit_variant(self) -> Result<(), Self::Error> {
         match self.enum_box.data {
@@ -184,6 +194,15 @@ pub(super) struct VariantAccess<'de> {
 
 impl<'de> de::VariantAccess<'de> for VariantAccess<'de> {
     type Error = Error;
+
+    fn hint(&self) -> Option<VariantHint> {
+        Some(match &self.data {
+            Some(Value::Map(_)) => VariantHint::Struct(&[]),
+            Some(Value::Seq(seq)) => VariantHint::Tuple(seq.len()),
+            Some(_) => VariantHint::Newtype,
+            None => VariantHint::Unit,
+        })
+    }
 
     fn unit_variant(self) -> Result<(), Self::Error> {
         match self.data {
